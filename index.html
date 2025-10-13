@@ -175,6 +175,17 @@
         function handleImageUpload(e) {
             const file = e.target.files[0];
             if (file) {
+                // Uložit aktuální hodnoty z formuláře PŘED renderem
+                const typZamereniEl = document.getElementById('typZamereni');
+                const poznamkaEl = document.getElementById('poznamka');
+                
+                if (typZamereniEl) {
+                    state.confirmForm.typZamereni = typZamereniEl.value;
+                }
+                if (poznamkaEl) {
+                    state.confirmForm.poznamkaGeodeta = poznamkaEl.value;
+                }
+                
                 state.confirmForm.fotkaMimeType = file.type;
                 state.confirmForm.fotkaFileName = file.name;
                 const reader = new FileReader();
@@ -232,6 +243,10 @@
 
                 if (!fotkaFileId) {
                     alert('❌ Nepodařilo se nahrát soubor');
+                    if (confirmBtn) {
+                        confirmBtn.disabled = false;
+                        confirmBtn.textContent = '✓ Potvrdit dokončení';
+                    }
                     return;
                 }
 
@@ -369,8 +384,8 @@
                                             class="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 text-base"
                                         >
                                             <option value="">-- Vyberte typ --</option>
-                                            <option value="Stavba">Stavba</option>
-                                            <option value="DSPS">DSPS</option>
+                                            <option value="Stavba" ${state.confirmForm.typZamereni === 'Stavba' ? 'selected' : ''}>Stavba</option>
+                                            <option value="DSPS" ${state.confirmForm.typZamereni === 'DSPS' ? 'selected' : ''}>DSPS</option>
                                         </select>
                                     </div>
 
@@ -419,6 +434,12 @@
                                                         </div>
                                                     </div>
                                                 `}
+                                                <button
+                                                    onclick="removeSouborClick()"
+                                                    class="mt-2 text-sm text-red-600 hover:text-red-800 underline"
+                                                >
+                                                    Odstranit soubor
+                                                </button>
                                             </div>
                                         ` : ''}
                                     </div>
@@ -443,6 +464,41 @@
                 };
                 
                 window.imageUploadClick = handleImageUpload;
+                
+                // Event listenery pro průběžné ukládání hodnot
+                const typZamereniEl = document.getElementById('typZamereni');
+                const poznamkaEl = document.getElementById('poznamka');
+                
+                if (typZamereniEl) {
+                    typZamereniEl.onchange = (e) => {
+                        state.confirmForm.typZamereni = e.target.value;
+                    };
+                }
+                
+                if (poznamkaEl) {
+                    poznamkaEl.oninput = (e) => {
+                        state.confirmForm.poznamkaGeodeta = e.target.value;
+                    };
+                }
+                
+                window.removeSouborClick = () => {
+                    // Uložit aktuální hodnoty před resetem souboru
+                    state.confirmForm.typZamereni = document.getElementById('typZamereni').value;
+                    state.confirmForm.poznamkaGeodeta = document.getElementById('poznamka').value;
+                    
+                    // Odstranit soubor
+                    state.confirmForm.fotka = null;
+                    state.confirmForm.fotkaMimeType = '';
+                    state.confirmForm.fotkaFileName = '';
+                    
+                    // Reset file inputu
+                    const fileInput = document.getElementById('fileInput');
+                    if (fileInput) {
+                        fileInput.value = '';
+                    }
+                    
+                    render();
+                };
                 
                 window.confirmClick = () => {
                     state.confirmForm.typZamereni = document.getElementById('typZamereni').value;
