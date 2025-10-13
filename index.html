@@ -206,7 +206,7 @@
             });
         }
 
-        async function uploadFileToDrive(fileData, fileName, mimeType) {
+        async function uploadFileToDrive(fileData, fileName, mimeType, objektCislo) {
             try {
                 const response = await fetch(API_URL, {
                     method: 'POST',
@@ -214,7 +214,8 @@
                         action: 'uploadFile',
                         fileData: fileData,
                         fileName: fileName,
-                        mimeType: mimeType
+                        mimeType: mimeType,
+                        objektCislo: objektCislo // Přidat číslo objektu
                     })
                 });
                 const result = await response.json();
