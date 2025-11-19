@@ -232,51 +232,6 @@
             }
         }
 
-        async function confirmDateClick(requestId) {
-            const request = state.requests.find(r => r.id == requestId);
-            if (!request) return;
-
-            if (!confirm(`Potvrdit termín příjezdu ${request.pozadovaneDatum} v ${request.pozadovanyCas}?`)) {
-                return;
-            }
-
-            try {
-                // Aktualizovat stav v Google Sheets
-                const params = new URLSearchParams({
-                    action: 'update',
-                    id: requestId,
-                    potvrzenoGeodet: 'Ano'
-                });
-
-                const response = await fetch(`${API_URL}?${params}`);
-                await response.json();
-
-                // Poslat email stavbyvedoucímu
-                await emailjs.send(
-                    EMAIL_CONFIG.serviceId,
-                    'template_8nwdg6g', // Musíš vytvořit nový template v EmailJS
-                    {
-                        to_email: request.email,
-                        to_name: request.jmeno,
-                        geodet_jmeno: state.selectedGeodet,
-                        objekt_cislo: request.objektCislo,
-                        pozadovane_datum: request.pozadovaneDatum,
-                        pozadovany_cas: request.pozadovanyCas,
-                        poznamka: request.poznamka
-                    }
-                );
-
-                alert('✅ Termín byl potvrzen a email odeslán stavbyvedoucímu!');
-                
-                // Obnovit data
-                await loadMyRequests();
-                state.activeRequest = state.requests.find(r => r.id == requestId);
-                render();
-            } catch (error) {
-                console.error('Chyba při potvrzování termínu:', error);
-                alert('❌ Nepodařilo se potvrdit termín. Zkuste to znovu.');
-            }
-        }
 
         async function confirmSurvey(request) {
             if (!state.confirmForm.typZamereni || !state.confirmForm.poznamkaGeodeta || state.confirmForm.soubory.length === 0) {
@@ -422,27 +377,21 @@
                                     <p><strong>Email:</strong> ${req.email}</p>
                                     <p><strong>Datum požadavku:</strong> ${req.datumPozadavku}</p>
                                     
-                                    ${req.pozadovaneDatum && req.pozadovanyCas ? `
-                                        <div class="mt-4 p-4 bg-blue-50 border-l-4 border-blue-500 rounded">
-                                            <p class="font-bold text-blue-800 mb-2">📅 Požadované datum a čas příjezdu:</p>
-                                            <p class="text-blue-700">
+                                    ${req.schvaleneDatum && req.schvalenyCas && req.terminPotvrzen === 'Ano' ? `
+                                        <div class="mt-4 p-4 bg-green-50 border-l-4 border-green-500 rounded">
+                                            <p class="font-bold text-green-800 mb-2">✓ Schválený termín příjezdu:</p>
+                                            <p class="text-green-700">
+                                                <strong>Datum:</strong> ${req.schvaleneDatum}<br>
+                                                <strong>Čas:</strong> ${req.schvalenyCas}
+                                            </p>
+                                        </div>
+                                    ` : req.pozadovaneDatum && req.pozadovanyCas ? `
+                                        <div class="mt-4 p-4 bg-orange-50 border-l-4 border-orange-500 rounded">
+                                            <p class="font-bold text-orange-800 mb-2">⏳ Požadovaný termín (čeká na schválení):</p>
+                                            <p class="text-orange-700">
                                                 <strong>Datum:</strong> ${req.pozadovaneDatum}<br>
                                                 <strong>Čas:</strong> ${req.pozadovanyCas}
                                             </p>
-                                            ${req.potvrzenoGeodet === 'Ano' ? `
-                                                <div class="mt-3 p-3 bg-green-100 rounded-lg border-2 border-green-300">
-                                                    <p class="text-green-800 font-bold">✓ Termín potvrzen</p>
-                                                </div>
-                                            ` : `
-                                                <div class="mt-3">
-                                                    <button
-                                                        onclick="confirmDateClick('${req.id}')"
-                                                        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-all"
-                                                    >
-                                                        ✓ Potvrdit termín příjezdu
-                                                    </button>
-                                                </div>
-                                            `}
                                         </div>
                                     ` : ''}
                                     
@@ -574,7 +523,6 @@
                     render();
                 };
                 
-                window.confirmDateClick = confirmDateClick;
                 window.imageUploadClick = handleImageUpload;
                 
                 // Event listenery pro průběžné ukládání hodnot
